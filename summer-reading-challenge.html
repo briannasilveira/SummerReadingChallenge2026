@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Summer Reading Challenge 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #fef3c7; font-family: Georgia, 'Times New Roman', serif; }
+  input, button { font-family: inherit; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const HOLDS_BOOKS = [
+  "Remarkably Bright Creatures – Shelby Van Pelt",
+  "Love by the Book – Jessica George",
+  "The Night We Met – Abby Jimenez",
+  "Sunburn – Chloe Michelle Howarth",
+  "Say You'll Be Mine – Naina Kumar",
+  "Flirting With Disaster – Naina Kumar",
+  "The Summers Between Us – Noreen Nanja",
+  "These Summer Storms – Sarah MacLean",
+  "Promise Me Sunshine – Cara Bastone",
+  "One Golden Summer – Carley Fortune",
+  "Every Summer After – Carley Fortune",
+];
+
+const PROMPTS = [
+  { id: 1, emoji: "🌊", category: "Summer", title: "Beach Read Energy", desc: "A book set near water (ocean, lake, river, or pool)" },
+  { id: 2, emoji: "☀️", category: "Summer", title: "Golden Hour", desc: "A book with a season or weather element in the title or cover" },
+  { id: 3, emoji: "🌿", category: "Summer", title: "Slow Down", desc: "A book under 250 pages — savor a short, perfect read" },
+  { id: 4, emoji: "🍹", category: "Summer", title: "Vacation Mode", desc: "A book set in a place you've always wanted to visit" },
+  { id: 5, emoji: "🌅", category: "Summer", title: "Second Chances", desc: "A book featuring a reunion or rekindled relationship" },
+  { id: 6, emoji: "🎆", category: "Summer", title: "Long Weekend Read", desc: "A book you read in 3 days or fewer" },
+  { id: 7, emoji: "💌", category: "Romance", title: "Slow Burn", desc: "A romance with enemies-to-lovers or friends-to-lovers trope" },
+  { id: 8, emoji: "💐", category: "Romance", title: "Big Feelings", desc: "A romance that made you cry or laugh out loud" },
+  { id: 9, emoji: "📖", category: "Romance", title: "Happily Ever After", desc: "A romance by an author you've never read before" },
+  { id: 10, emoji: "🪶", category: "Literary Fiction", title: "Award Season", desc: "A book that won or was shortlisted for a literary prize" },
+  { id: 11, emoji: "🌍", category: "Literary Fiction", title: "Another World", desc: "A book set outside of North America" },
+  { id: 12, emoji: "🧵", category: "Literary Fiction", title: "Generations", desc: "A book spanning multiple timelines or generations" },
+  { id: 13, emoji: "🏳️‍🌈", category: "Representation", title: "Love Is Love", desc: "A book by or featuring an LGBTQ+ author or protagonist" },
+  { id: 14, emoji: "✊🏽", category: "Representation", title: "Own Voices", desc: "A book by a racialized author or centered on a racialized character's experience" },
+  { id: 15, emoji: "♿", category: "Representation", title: "Full Spectrum", desc: "A book by or featuring a disabled character or author" },
+  { id: 16, emoji: "🌺", category: "Representation", title: "Diaspora Stories", desc: "A book exploring immigrant or diaspora identity" },
+  { id: 17, emoji: "📚", category: "General", title: "Stack Attack", desc: "A book that has been on your TBR for over a year" },
+  { id: 18, emoji: "🎧", category: "General", title: "Mix It Up", desc: "Listen to an audiobook you haven't heard before" },
+  { id: 19, emoji: "🌙", category: "General", title: "Page Turner", desc: "A book over 400 pages" },
+  { id: 20, emoji: "🤝", category: "General", title: "Recommended", desc: "A book recommended by a friend, podcast, or book club" },
+];
+
+const ACTIVITIES = [
+  { id: "a1", emoji: "⏱️", label: "Read for 45 minutes", points: 2 },
+  { id: "a2", emoji: "🕐", label: "Read for 1 hour", points: 3 },
+  { id: "a3", emoji: "📖", label: "Read for 2+ hours", points: 5 },
+  { id: "a4", emoji: "🌳", label: "Read outside for a full session", points: 3 },
+  { id: "a5", emoji: "🏖️", label: "Read on the beach", points: 4 },
+  { id: "a6", emoji: "☕", label: "Read at a café or park", points: 3 },
+  { id: "a7", emoji: "🏪", label: "Visit a bookstore", points: 4 },
+  { id: "a8", emoji: "📚", label: "Visit the library", points: 3 },
+  { id: "a9", emoji: "🎬", label: "Check out a library book, movie, or other media", points: 4 },
+];
+
+const MILESTONES = [
+  { points: 65,  label: "Midsummer Magic",  emoji: "🌸", date: "~June 15" },
+  { points: 130, label: "Halfway There",    emoji: "🌞", date: "~July 4"  },
+  { points: 200, label: "Late Summer Glow", emoji: "🌻", date: "~Aug 1"   },
+  { points: 270, label: "Summer Champion",  emoji: "🏆", date: "Aug 30"   },
+];
+
+const CATEGORY_COLORS = {
+  Summer: "#f59e0b",
+  Romance: "#ec4899",
+  "Literary Fiction": "#8b5cf6",
+  Representation: "#10b981",
+  General: "#3b82f6",
+};
+
+const STORAGE_KEY = "summerReading2026";
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function save(state) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
+}
+
+function App() {
+  const saved = load();
+
+  const [completedPrompts,    setCompletedPrompts]    = useState(saved?.completedPrompts    || {});
+  const [completedActivities, setCompletedActivities] = useState(saved?.completedActivities || {});
+  const [standaloneBooks,     setStandaloneBooks]     = useState(saved?.standaloneBooks     || 0);
+  const [holdsStandaloneBooks,setHoldsStandaloneBooks]= useState(saved?.holdsStandaloneBooks|| 0);
+  const [activeTab,           setActiveTab]           = useState("prompts");
+  const [showModal,           setShowModal]           = useState(null);
+  const [modalInput,          setModalInput]          = useState({ title: "", isHold: false });
+  const [savedFlash,          setSavedFlash]          = useState(false);
+
+  // Persist to localStorage whenever state changes
+  useEffect(() => {
+    save({ completedPrompts, completedActivities, standaloneBooks, holdsStandaloneBooks });
+    setSavedFlash(true);
+    const t = setTimeout(() => setSavedFlash(false), 1200);
+    return () => clearTimeout(t);
+  }, [completedPrompts, completedActivities, standaloneBooks, holdsStandaloneBooks]);
+
+  const promptPoints         = Object.values(completedPrompts).reduce((s, v) => s + (v.isHold ? 10 : 7), 0);
+  const activityPoints       = Object.entries(completedActivities).reduce((s, [id, count]) => {
+    const act = ACTIVITIES.find(a => a.id === id);
+    return s + (act ? act.points * count : 0);
+  }, 0);
+  const standalonePoints     = standaloneBooks * 5;
+  const holdsStandalonePoints= holdsStandaloneBooks * 8;
+  const totalPoints          = promptPoints + activityPoints + standalonePoints + holdsStandalonePoints;
+  const booksRead            = Object.keys(completedPrompts).length + standaloneBooks + holdsStandaloneBooks;
+  const nextMilestone        = MILESTONES.find(m => totalPoints < m.points);
+
+  function incrementActivity(act) {
+    setCompletedActivities(prev => ({ ...prev, [act.id]: (prev[act.id] || 0) + 1 }));
+  }
+  function decrementActivity(act) {
+    setCompletedActivities(prev => {
+      const next = { ...prev };
+      if ((next[act.id] || 0) <= 1) delete next[act.id];
+      else next[act.id] -= 1;
+      return next;
+    });
+  }
+  function openPromptModal(prompt) {
+    setShowModal(prompt);
+    const existing = completedPrompts[prompt.id];
+    setModalInput(existing ? { ...existing } : { title: "", isHold: false });
+  }
+  function savePrompt() {
+    if (!modalInput.title.trim()) {
+      setCompletedPrompts(prev => { const n = { ...prev }; delete n[showModal.id]; return n; });
+    } else {
+      setCompletedPrompts(prev => ({ ...prev, [showModal.id]: { ...modalInput } }));
+    }
+    setShowModal(null);
+  }
+
+  const tabStyle = (tab) => ({
+    padding: "8px 16px",
+    borderRadius: 99,
+    border: "none",
+    cursor: "pointer",
+    fontSize: 13,
+    fontFamily: "inherit",
+    fontWeight: activeTab === tab ? "bold" : "normal",
+    background: activeTab === tab ? "#d97706" : "#fff",
+    color: activeTab === tab ? "#fff" : "#6b7280",
+    boxShadow: activeTab === tab ? "0 2px 8px rgba(217,119,6,0.3)" : "0 1px 4px rgba(0,0,0,0.08)",
+    transition: "all 0.2s",
+    whiteSpace: "nowrap",
+  });
+
+  return (
+    <div style={{ minHeight: "100vh", background: "linear-gradient(160deg,#fef3c7 0%,#fde68a 20%,#fdf4ff 60%,#e0f2fe 100%)", paddingBottom: 60 }}>
+
+      {/* Saved flash */}
+      <div style={{
+        position: "fixed", top: 12, right: 12, zIndex: 200,
+        background: "#059669", color: "#fff", borderRadius: 8,
+        padding: "6px 14px", fontSize: 12, fontWeight: "bold",
+        opacity: savedFlash ? 1 : 0, transition: "opacity 0.4s",
+        pointerEvents: "none",
+      }}>✓ Saved</div>
+
+      {/* Header */}
+      <div style={{ background: "linear-gradient(135deg,#92400e 0%,#b45309 40%,#d97706 100%)", padding: "40px 24px 32px", textAlign: "center", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(circle at 20% 50%,rgba(255,255,255,0.08) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(255,255,255,0.06) 0%,transparent 40%)" }} />
+        <div style={{ fontSize: 48, marginBottom: 8 }}>📖☀️</div>
+        <h1 style={{ color: "#fef3c7", margin: "0 0 6px", fontSize: "clamp(22px,6vw,36px)", fontWeight: "normal", letterSpacing: "0.04em", textShadow: "0 2px 8px rgba(0,0,0,0.2)" }}>Summer Reading Challenge</h1>
+        <p style={{ color: "#fde68a", margin: "0 0 20px", fontSize: 13, letterSpacing: "0.12em", textTransform: "uppercase" }}>Memorial Day → August 30, 2026</p>
+        <div style={{ display: "flex", justifyContent: "center", gap: 20, flexWrap: "wrap" }}>
+          {[{ label: "Total Points", value: totalPoints, emoji: "⭐" }, { label: "Books Read", value: booksRead, emoji: "📚" }, { label: "Prompts Done", value: Object.keys(completedPrompts).length, emoji: "✅" }].map(s => (
+            <div key={s.label} style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)", borderRadius: 12, padding: "10px 20px", textAlign: "center", minWidth: 86 }}>
+              <div style={{ fontSize: 20 }}>{s.emoji}</div>
+              <div style={{ color: "#fff", fontSize: 24, fontWeight: "bold", lineHeight: 1.1 }}>{s.value}</div>
+              <div style={{ color: "#fde68a", fontSize: 10, letterSpacing: "0.08em" }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ padding: "20px 16px 0", maxWidth: 700, margin: "0 auto" }}>
+
+        {/* Milestones */}
+        <div style={{ background: "#fff", borderRadius: 16, padding: 20, boxShadow: "0 2px 16px rgba(0,0,0,0.07)", marginBottom: 16 }}>
+          <h2 style={{ margin: "0 0 14px", fontSize: 14, color: "#92400e", letterSpacing: "0.06em", textTransform: "uppercase" }}>🏆 Milestones</h2>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {MILESTONES.map((m, i) => {
+              const reached = totalPoints >= m.points;
+              const isCurrent = nextMilestone?.points === m.points;
+              return (
+                <div key={i} style={{ flex: "1 1 130px", background: reached ? "linear-gradient(135deg,#d97706,#f59e0b)" : isCurrent ? "#fef9ee" : "#f8f8f8", border: isCurrent ? "2px solid #f59e0b" : "2px solid transparent", borderRadius: 12, padding: 12, textAlign: "center", transition: "all 0.3s" }}>
+                  <div style={{ fontSize: 22 }}>{m.emoji}</div>
+                  <div style={{ fontSize: 12, fontWeight: "bold", color: reached ? "#fff" : "#374151", marginBottom: 2 }}>{m.label}</div>
+                  <div style={{ fontSize: 18, color: reached ? "#fef3c7" : "#d97706", fontWeight: "bold" }}>{m.points} pts</div>
+                  <div style={{ fontSize: 10, color: reached ? "#fde68a" : "#9ca3af" }}>{m.date}</div>
+                  {isCurrent && <div style={{ fontSize: 10, color: "#d97706", marginTop: 3 }}>{m.points - totalPoints} pts to go!</div>}
+                  {reached && <div style={{ fontSize: 10, color: "#fef3c7", marginTop: 3 }}>🎉 Reached!</div>}
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#9ca3af", marginBottom: 4 }}>
+              <span>0 pts</span>
+              <span>{nextMilestone ? `Next: ${nextMilestone.points} pts` : "🎉 All milestones reached!"}</span>
+            </div>
+            <div style={{ background: "#f3f4f6", borderRadius: 99, height: 10, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${Math.min(100, (totalPoints / 270) * 100)}%`, background: "linear-gradient(90deg,#f59e0b,#d97706)", borderRadius: 99, transition: "width 0.5s ease" }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Point Guide */}
+        <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 12, padding: "12px 16px", marginBottom: 16, fontSize: 12, color: "#78350f", lineHeight: 1.7 }}>
+          <strong>Point Guide:</strong><br/>
+          📗 Finish any book = <strong>5 pts</strong> &nbsp;·&nbsp; ⭐ Holds book, no prompt = <strong>8 pts</strong><br/>
+          ✅ Fill a prompt = <strong>7 pts</strong> &nbsp;·&nbsp; ⭐ Holds book fills a prompt = <strong>10 pts</strong><br/>
+          🌳 Activities = <strong>2–5 pts each</strong>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 16, overflowX: "auto", paddingBottom: 4 }}>
+          <button style={tabStyle("prompts")}   onClick={() => setActiveTab("prompts")}>📋 Prompts ({Object.keys(completedPrompts).length}/{PROMPTS.length})</button>
+          <button style={tabStyle("standalone")}onClick={() => setActiveTab("standalone")}>📗 Books ({standaloneBooks + holdsStandaloneBooks})</button>
+          <button style={tabStyle("activities")}onClick={() => setActiveTab("activities")}>🌳 Activities ({Object.values(completedActivities).reduce((s,c)=>s+c,0)} logged)</button>
+        </div>
+
+        {/* Prompts Tab */}
+        {activeTab === "prompts" && (
+          <div>
+            {["Summer","Romance","Literary Fiction","Representation","General"].map(cat => (
+              <div key={cat} style={{ marginBottom: 20 }}>
+                <h3 style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.1em", color: CATEGORY_COLORS[cat], margin: "0 0 10px", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ flex: 1, height: 1, background: CATEGORY_COLORS[cat], opacity: 0.3 }} />
+                  {cat}
+                  <span style={{ flex: 1, height: 1, background: CATEGORY_COLORS[cat], opacity: 0.3 }} />
+                </h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {PROMPTS.filter(p => p.category === cat).map(prompt => {
+                    const done = completedPrompts[prompt.id];
+                    return (
+                      <div key={prompt.id} onClick={() => openPromptModal(prompt)} style={{ background: done ? "linear-gradient(135deg,#fffbeb,#fef3c7)" : "#fff", border: done ? `2px solid ${CATEGORY_COLORS[cat]}40` : "2px solid #f3f4f6", borderRadius: 12, padding: "12px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, boxShadow: "0 1px 6px rgba(0,0,0,0.05)", transition: "all 0.2s" }}>
+                        <span style={{ fontSize: 22, flexShrink: 0 }}>{done ? "✅" : prompt.emoji}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: "bold", fontSize: 13, color: "#1f2937", marginBottom: 2 }}>{prompt.title}</div>
+                          <div style={{ fontSize: 11, color: "#6b7280", lineHeight: 1.4 }}>{prompt.desc}</div>
+                          {done && <div style={{ fontSize: 11, color: "#d97706", marginTop: 3, fontStyle: "italic" }}>📖 {done.title}{done.isHold ? " ⭐" : ""}</div>}
+                        </div>
+                        <div style={{ flexShrink: 0, background: done ? CATEGORY_COLORS[cat] : "#f3f4f6", color: done ? "#fff" : "#9ca3af", borderRadius: 99, padding: "3px 10px", fontSize: 11, fontWeight: "bold" }}>
+                          {done ? (done.isHold ? "10 pts" : "7 pts") : "7–10"}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Standalone Tab */}
+        {activeTab === "standalone" && (
+          <div style={{ background: "#fff", borderRadius: 16, padding: 24, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+            <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 24 }}>Books finished that aren't filling a prompt.</p>
+
+            {[
+              { label: "Any book", sublabel: "5 pts each", pts: 5, val: standaloneBooks, set: setStandaloneBooks, color: "#d97706", border: "#e5e7eb" },
+              { label: "⭐ Holds book (no prompt)", sublabel: "8 pts each", pts: 8, val: holdsStandaloneBooks, set: setHoldsStandaloneBooks, color: "#b45309", border: "#fde68a" },
+            ].map((row, i) => (
+              <div key={i}>
+                {i > 0 && <div style={{ height: 1, background: "#f3f4f6", margin: "20px 0" }} />}
+                <div style={{ fontSize: 12, fontWeight: "bold", color: "#6b7280", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  📗 {row.label} — <span style={{ color: row.color }}>{row.sublabel}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 20 }}>
+                  <button onClick={() => row.set(Math.max(0, row.val - 1))} style={{ width: 40, height: 40, borderRadius: "50%", border: `2px solid ${row.border}`, background: "#fff", fontSize: 20, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 44, fontWeight: "bold", color: row.color, lineHeight: 1 }}>{row.val}</div>
+                    <div style={{ color: "#9ca3af", fontSize: 11 }}>books</div>
+                    <div style={{ color: row.color, fontSize: 12, marginTop: 2 }}>{row.val * row.pts} pts</div>
+                  </div>
+                  <button onClick={() => row.set(row.val + 1)} style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: row.color, color: "#fff", fontSize: 20, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+                </div>
+              </div>
+            ))}
+            <p style={{ color: "#9ca3af", fontSize: 11, textAlign: "center", marginTop: 20 }}>Tip: Log a holds book under a prompt to earn 10 pts — the maximum!</p>
+          </div>
+        )}
+
+        {/* Activities Tab */}
+        {activeTab === "activities" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {ACTIVITIES.map(act => {
+              const count = completedActivities[act.id] || 0;
+              return (
+                <div key={act.id} style={{ background: count > 0 ? "linear-gradient(135deg,#ecfdf5,#d1fae5)" : "#fff", border: count > 0 ? "2px solid #10b981" : "2px solid #f3f4f6", borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 12, boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+                  <span style={{ fontSize: 24, flexShrink: 0 }}>{act.emoji}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: "bold", fontSize: 13, color: "#1f2937" }}>{act.label}</div>
+                    <div style={{ fontSize: 11, color: count > 0 ? "#059669" : "#9ca3af" }}>
+                      {count > 0 ? `${count}× completed · ${count * act.points} pts earned` : `+${act.points} pts each time`}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                    <button onClick={() => decrementActivity(act)} style={{ width: 30, height: 30, borderRadius: "50%", border: "2px solid #e5e7eb", background: "#fff", fontSize: 16, cursor: count > 0 ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", color: count > 0 ? "#374151" : "#d1d5db" }}>−</button>
+                    <span style={{ minWidth: 22, textAlign: "center", fontWeight: "bold", fontSize: 17, color: count > 0 ? "#059669" : "#9ca3af" }}>{count}</span>
+                    <button onClick={() => incrementActivity(act)} style={{ width: 30, height: 30, borderRadius: "50%", border: "none", background: "#10b981", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>+</button>
+                  </div>
+                </div>
+              );
+            })}
+            <p style={{ fontSize: 11, color: "#9ca3af", textAlign: "center", marginTop: 6 }}>Each completion counts — log it as many times as you like!</p>
+          </div>
+        )}
+
+        {/* Holds Books Reference */}
+        <div style={{ background: "#fff", borderRadius: 16, padding: 18, marginTop: 24, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+          <h3 style={{ margin: "0 0 10px", fontSize: 13, color: "#92400e", letterSpacing: "0.06em" }}>⭐ Your Holds Books (10 pts when used for a prompt)</h3>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {HOLDS_BOOKS.map((b, i) => (
+              <span key={i} style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 6, padding: "4px 10px", fontSize: 11, color: "#78350f" }}>{b}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Modal */}
+      {showModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 16 }} onClick={() => setShowModal(null)}>
+          <div style={{ background: "#fff", borderRadius: 20, padding: 26, width: "100%", maxWidth: 420, boxShadow: "0 8px 40px rgba(0,0,0,0.2)" }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 34, textAlign: "center", marginBottom: 6 }}>{showModal.emoji}</div>
+            <h2 style={{ textAlign: "center", margin: "0 0 4px", fontSize: 18, color: "#1f2937" }}>{showModal.title}</h2>
+            <p style={{ textAlign: "center", color: "#6b7280", fontSize: 12, marginBottom: 18 }}>{showModal.desc}</p>
+            <label style={{ display: "block", fontSize: 11, color: "#6b7280", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.08em" }}>Book title & author</label>
+            <input value={modalInput.title} onChange={e => setModalInput(m => ({ ...m, title: e.target.value }))} placeholder="e.g. Every Summer After – Carley Fortune"
+              style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "2px solid #e5e7eb", fontSize: 14, boxSizing: "border-box", marginBottom: 12, outline: "none" }} />
+            <label style={{ display: "flex", alignItems: "center", gap: 10, background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "10px 12px", cursor: "pointer", marginBottom: 18 }}>
+              <input type="checkbox" checked={modalInput.isHold} onChange={e => setModalInput(m => ({ ...m, isHold: e.target.checked }))} style={{ width: 17, height: 17, accentColor: "#d97706" }} />
+              <div>
+                <div style={{ fontSize: 12, fontWeight: "bold", color: "#78350f" }}>⭐ This is one of my holds books</div>
+                <div style={{ fontSize: 10, color: "#b45309" }}>Earns 10 pts instead of 7 pts</div>
+              </div>
+            </label>
+            <div style={{ display: "flex", gap: 8 }}>
+              {completedPrompts[showModal.id] && (
+                <button onClick={() => { setCompletedPrompts(prev => { const n={...prev}; delete n[showModal.id]; return n; }); setShowModal(null); }}
+                  style={{ flex: 1, padding: "11px", borderRadius: 10, border: "2px solid #fee2e2", background: "#fff", color: "#ef4444", cursor: "pointer", fontSize: 12 }}>Remove</button>
+              )}
+              <button onClick={() => setShowModal(null)} style={{ flex: 1, padding: "11px", borderRadius: 10, border: "2px solid #e5e7eb", background: "#fff", color: "#6b7280", cursor: "pointer", fontSize: 12 }}>Cancel</button>
+              <button onClick={savePrompt} style={{ flex: 2, padding: "11px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#d97706,#f59e0b)", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: "bold" }}>Save ✓</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
